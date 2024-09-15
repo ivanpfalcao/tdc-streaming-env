@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aws-cli
+  labels:
+    app: aws-cli
+spec:
+  serviceName: "aws-cli-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-cli
+  template:
+    metadata:
+      labels:
+        app: aws-cli
+    spec:
+      containers:
+      - name: aws-cli-container
+        image: amazon/aws-cli:latest
+        command: ["/bin/sh", "-c", "while true; do sleep 3600; done"]
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"

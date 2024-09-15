@@ -1,0 +1,363 @@
+# This spec only works on a single node kubernetes cluster(e.g. typical k8s cluster setup for dev using kind/minikube or single node AWS EKS cluster etc)
+# as it uses local disk as "deep storage".
+#
+apiVersion: "druid.apache.org/v1alpha1"
+kind: "Druid"
+metadata:
+  name: tiny-cluster
+spec:
+  image: apache/druid:28.0.0
+  # Optionally specify image for all nodes. Can be specify on nodes also
+  # imagePullSecrets:
+  # - name: tutu
+  startScript: /druid.sh
+  podLabels:
+    environment: stage
+    release: alpha
+  podAnnotations:
+    dummykey: dummyval
+  readinessProbe:
+    httpGet:
+      path: /status/health
+      port: 8088
+  securityContext:
+    fsGroup: 1000
+    runAsUser: 1000
+    runAsGroup: 1000
+  services:
+    - spec:
+        type: ClusterIP
+        clusterIP: None
+  extraCommonConfig:
+    - name: jets3t.properties
+      namespace: druid-streaming-dev
+  commonConfigMountPath: "/opt/druid/conf/druid/cluster/_common"
+  jvm.options: |-
+    -server
+    -XX:MaxDirectMemorySize=10240g
+    -Duser.timezone=UTC
+    -Dfile.encoding=UTF-8
+    -Dlog4j.debug
+    -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+    -Djava.io.tmpdir=/druid/data
+    -Dcom.sun.net.ssl.checkRevocation=false 
+    -Dcom.sun.net.ssl.trustStoreType=JKS 
+    -Dcom.sun.net.ssl.trustStore=NONE
+  log4j.config: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <Configuration status="WARN">
+        <Appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+                <PatternLayout pattern="%d{ISO8601} %p [%t] %c - %m%n"/>
+            </Console>
+        </Appenders>
+        <Loggers>
+            <Root level="info">
+                <AppenderRef ref="Console"/>
+            </Root>
+        </Loggers>
+    </Configuration>
+  common.runtime.properties: |
+
+    # Zookeeper
+    druid.zk.service.host=tiny-cluster-zk-0.tiny-cluster-zk
+    druid.zk.paths.base=/druid
+    druid.zk.service.compress=false
+
+    # Metadata Store
+    druid.metadata.storage.type=postgresql
+    druid.metadata.storage.connector.connectURI=jdbc:postgresql://postgres.druid-streaming-dev.svc.cluster.local:5432/druid_postgres
+    druid.metadata.storage.connector.user=druid_user
+    druid.metadata.storage.connector.password=druid_pswd
+
+    druid.indexer.runner.taskAssignmentTimeout=PT30M
+    druid.indexer.runner.taskShutdownLinkTimeout=PT30M
+    druid.indexer.runner.taskGracefulShutdownTimeout=PT30M    
+
+    # Deep Storage
+    druid.storage.type=s3
+    druid.storage.bucket=druidbucket
+    druid.storage.baseKey=deepstorage
+    druid.storage.disableAcl=true
+    #druid.s3.disableAcl=true
+    druid.s3.accessKey=TgcFOLO49eKctC0Yc69W
+    druid.s3.secretKey=z5MsduF9HGBw5xtAhgdpzZsSAmg73ollfQFIlb5S
+    
+    druid.s3.endpoint.url=http://myminio-hl.druid-streaming-dev.svc.cluster.local:9000
+    #druid.s3.endpoint.url=http://minio-cluster-0.minio-cluster-headless.druid-streaming-dev.svc.cluster.local:9000
+    druid.s3.protocol=http
+    druid.s3.enablePathStyleAccess=true
+    druid.s3.endpoint.signingRegion=us-east-1
+    
+
+    #
+    # Extensions
+    
+    #
+    druid.extensions.loadList=["druid-kafka-indexing-service", "postgresql-metadata-storage", "druid-s3-extensions"]
+
+    #
+    # Service discovery
+    #
+    druid.selectors.indexing.serviceName=druid/overlord
+    druid.selectors.coordinator.serviceName=druid/coordinator
+
+    #druid.indexer.logs.type=s3
+    #druid.indexer.logs.s3Bucket=druid-bucket
+    #druid.indexer.logs.s3Prefix=druid/indexing-logs
+    druid.indexer.logs.type=file
+    druid.indexer.logs.directory=/druid/data/indexing-logs
+    druid.startup.logging.logProperties=true    
+  volumeMounts:
+    - mountPath: /druid/data
+      name: data-volume
+  volumes:
+    - name: data-volume
+      emptyDir: {}
+    #- name: jets3t-config-volume
+    #  configMap:
+    #    name: jets3t-config      
+  env:
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.name
+    - name: POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
+    - name: AWS_REGION
+      value: us-east-1
+
+  nodes:
+    brokers:
+      # Optionally specify for running broker as Deployment
+      # kind: Deployment
+      nodeType: "broker"
+      # Optionally specify for broker nodes
+      # imagePullSecrets:
+      # - name: tutu
+      druid.port: 8088
+      nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/broker"
+      replicas: 1
+      runtime.properties: |
+        druid.service=druid/broker
+
+        # HTTP server threads
+        druid.broker.http.numConnections=5
+        druid.server.http.numThreads=10
+
+        # Processing threads and buffers
+        druid.processing.buffer.sizeBytes=20MiB
+        druid.processing.numMergeBuffers=3
+        druid.processing.numThreads=1
+        druid.sql.enable=true
+      extra.jvm.options: |-
+        -Xmx512M
+        -Xms512M
+      hpAutoscaler:
+        maxReplicas: 10
+        minReplicas: 1
+        scaleTargetRef:
+           apiVersion: apps/v1
+           kind: StatefulSet
+           name: druid-tiny-cluster-brokers
+        metrics:
+         - type: Resource
+           resource:
+             name: cpu
+             target:
+               type: Utilization
+               averageUtilization: 50
+
+    coordinators:
+      # Optionally specify for running coordinator as Deployment
+      # kind: Deployment
+      nodeType: "coordinator"
+      druid.port: 8088
+      nodeConfigMountPath: "/opt/druid/conf/druid/cluster/master/coordinator-overlord"
+      replicas: 1
+      env:            
+        - name: AWS_REGION
+          value: us-east-1
+      runtime.properties: |
+        druid.service=druid/coordinator
+
+        # HTTP server threads
+        druid.coordinator.startDelay=PT30S
+        druid.coordinator.period=PT30S
+
+        # Configure this coordinator to also run as Overlord
+        druid.coordinator.asOverlord.enabled=true
+        druid.coordinator.asOverlord.overlordService=druid/overlord
+        druid.indexer.queue.startDelay=PT30S
+        druid.indexer.runner.type=local
+      extra.jvm.options: |-
+        -Xmx512M
+        -Xms512M
+
+    historicals:
+      nodeType: "historical"
+      druid.port: 8088
+      nodeConfigMountPath: "/opt/druid/conf/druid/cluster/data/historical"
+      replicas: 1
+      resources:
+        limits:
+          cpu: "4"
+          memory: 4Gi
+        requests:
+          cpu: "2"
+          memory: 2Gi      
+      runtime.properties: |
+        druid.service=druid/historical
+        druid.server.http.numThreads=5
+        druid.processing.buffer.sizeBytes=536870912
+        druid.processing.numMergeBuffers=1
+        druid.processing.numThreads=1
+        # Segment storage
+        druid.segmentCache.locations=[{\"path\":\"/druid/data/segments\",\"maxSize\":10737418240}]
+        druid.server.maxSize=10737418240
+      extra.jvm.options: |-
+        -Xmx512M
+        -Xms512M
+          
+    routers:
+      nodeType: "router"
+      druid.port: 8088
+      nodeConfigMountPath: "/opt/druid/conf/druid/cluster/query/router"
+      replicas: 1
+      resources:
+        limits:
+          cpu: "4"
+          memory: 4Gi
+        requests:
+          cpu: "2"
+          memory: 2Gi      
+      runtime.properties: |
+        druid.service=druid/router
+
+        # HTTP proxy
+        druid.router.http.numConnections=3
+        druid.router.http.readTimeout=PT5M
+        druid.router.http.numMaxThreads=10
+        druid.server.http.numThreads=10
+
+        # Service discovery
+        druid.router.defaultBrokerServiceName=druid/broker
+        druid.router.coordinatorServiceName=druid/coordinator
+
+        # Management proxy to coordinator / overlord: required for unified web console.
+        druid.router.managementProxy.enabled=true       
+      extra.jvm.options: |-
+        -Xmx512M
+        -Xms512M
+
+    middlemanagers:
+      podAnnotations:
+        type: middlemanager      
+      # volumeMounts:
+      #   - mountPath: /druid/deep
+      #     name: data-deep
+      tolerations:
+       -
+         effect: NoSchedule
+         key: node-role.kubernetes.io/master
+         operator: Exists
+      druid.port: 8091
+      extra.jvm.options: |-
+          -server
+          -Xms1g
+          -Xmx3g
+          -XX:+ExitOnOutOfMemoryError
+          -XX:+UseG1GC
+          -Duser.timezone=UTC
+          -Dfile.encoding=UTF-8
+          -Djava.io.tmpdir=var/tmp
+          -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager
+      nodeType: middleManager
+      nodeConfigMountPath: /opt/druid/conf/druid/cluster/data/middleManager
+      # podDisruptionBudgetSpec:
+        # maxUnavailable: 1
+      ports:
+        - containerPort: 8102
+          name: peon-0      
+      replicas: 2
+      resources:
+        limits:
+          cpu: "4"
+          memory: 8Gi
+        requests:
+          cpu: "2"
+          memory: 2Gi
+      livenessProbe:
+          initialDelaySeconds: 30
+          httpGet:
+            path: /status/health
+            port: 8091
+      readinessProbe:
+          initialDelaySeconds: 30
+          httpGet:
+            path: /status/health
+            port: 8091
+      # volumeMounts:
+      #  - mountPath: /druid/deep
+      #    name: data-deep
+      volumes:
+        # - name: data-deep
+        #   persistentVolumeClaim:
+        #     claimName: historical-druid-dev-cem
+        - name: mid-data-volume
+          emptyDir: {}
+      # volumeClaimTemplates:
+      #   - metadata:
+      #       name: data-deep
+      #       annotations:
+      #         volume.beta.kubernetes.io/storage-class: ocs-external-storagecluster-ceph-rbd
+      #     spec:
+      #       accessModes: 
+      #         - ReadWriteOnce
+      #       resources:
+      #         requests:
+      #           storage: 150Gi
+      runtime.properties: |-
+          druid.service=druid/middleManager
+          # Number of tasks per middleManager
+          druid.worker.capacity=16
+          # Task launch parameters
+          druid.indexer.runner.javaCommand=bin/run-java
+          druid.indexer.runner.javaOptsArray=["-server","-Xms1g","-Xmx3g","-XX:MaxDirectMemorySize=3g","-Duser.timezone=UTC","-Dfile.encoding=UTF-8","-XX:+ExitOnOutOfMemoryError","-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager"]
+          druid.indexer.task.baseTaskDir=var/druid/task
+          # HTTP server threads
+          druid.server.http.numThreads=30
+          # druid.middleManager.task.processor.thread.pool.size=40
+          # Processing threads and buffers on Peons
+          druid.indexer.fork.property.druid.processing.numMergeBuffers=4
+          druid.indexer.fork.property.druid.processing.buffer.sizeBytes=200Mib
+          druid.indexer.fork.property.druid.processing.numThreads=4
+          # druid.supervisor.taskUnhealthinessThreshold=20
+          # Hadoop indexing
+          druid.indexer.task.hadoopWorkingPath=var/druid/hadoop-tmp
+      services:
+        -
+          spec:
+            clusterIP: None
+            ports:
+              -
+                name: tcp-service-port
+                port: 8091
+                targetPort: 8091
+            type: ClusterIP
+      # hpAutoscaler:
+      #   maxReplicas: 10
+      #   minReplicas: 2
+      #   scaleTargetRef:
+      #      apiVersion: apps/v1
+      #      kind: StatefulSet
+      #      name: druid-cluster-middlemanagers
+      #   metrics:
+      #    - type: Resource
+      #      resource:
+      #        name: cpu
+      #        target:
+      #          type: Utilization
+      #          averageUtilization: 50        

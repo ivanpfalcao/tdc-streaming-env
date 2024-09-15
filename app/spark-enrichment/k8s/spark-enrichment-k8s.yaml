@@ -1,0 +1,209 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-ui-service
+spec:
+  ports:
+    - name: ui-port
+      protocol: TCP
+      port: 4040
+      targetPort: 4040
+    - name: executor-port
+      protocol: TCP
+      port: 40837
+      targetPort: 40837
+  selector:
+    spark-role: driver
+    app: spark-enrichment
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spark    
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spark-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "persistentvolumeclaims", "pods", "services"]
+  verbs: ["create", "get", "list", "watch", "delete", "deletecollection", "patch"] 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spark-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: spark 
+roleRef:
+  kind: Role
+  name: spark-role 
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-pod-template
+data:
+  spark-pod-template.yaml: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      labels:
+        app: spark-enrichment
+    spec:
+      restartPolicy: Never    
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: spark-enrich
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: SPARK_USER
+            value: "spark"      
+#        volumeMounts:
+#        - mountPath: /app/kafka-keystore
+#          name: kafka-keystore-volume
+#        - mountPath: /app/spark-enrichment/config
+#          name: spark-config-volume
+#        - name: jaas-conf-volume
+#          mountPath: /app/kafka-jaas          
+#      volumes:
+#      - name: kafka-keystore-volume
+#        secret:
+#          secretName: kafka-keystore-prod
+#      - name: spark-config-volume
+#        configMap:
+#          name: spark-config
+#      - name: "jaas-conf-volume"
+#        configMap:
+#          name: "kafka-jaas"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spark-enrichment
+  #spark-role: driver
+  #app: spark-enrichment  
+spec:
+  serviceName: "spark-ui-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spark-enrichment
+  template:
+    metadata:
+      labels:
+        app: spark-enrichment
+        spark-role: driver
+    spec:
+      containers:
+      - name: spark-driver
+        image: "ivanpfalcao/spark-enrichment:1.0.0"
+        resources:
+          requests:
+            memory: "1000Mi"
+            cpu: "1"
+          limits:
+            memory: "1000Mi"
+            cpu: "1"
+        ports:
+        - containerPort: 40837
+          name: spark-exec
+        - containerPort: 4040
+          name: spark-ui             
+        imagePullPolicy: IfNotPresent
+        #env:
+        #  - name: SPARK_USER
+        #    value: "1002190000"        2
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Spark User: ${SPARK_USER}" && \
+          /opt/spark/bin/spark-submit \
+            --master k8s://https://kubernetes.default.svc \
+            --deploy-mode client \
+            --name spark-application \
+            --conf spark.jars.ivy="/app/.ivy2" \
+            --packages org.apache.spark:spark-hadoop-cloud_2.12:3.5.1 \
+            --conf spark.kubernetes.driver.label.app="spark-enrichment" \
+            --conf spark.kubernetes.driver.pod.name="spark-enrichment-0" \
+            --conf spark.kubernetes.executor.label.app="spark-enrich-ex" \
+            --conf spark.kubernetes.authenticate.driver.serviceAccountName="spark" \
+            --conf spark.kubernetes.namespace="druid-streaming-dev" \
+            --conf spark.kubernetes.container.image="ivanpfalcao/spark-enrichment:1.0.0" \
+            --conf spark.kubernetes.container.imagePullPolicy=IfNotPresent \
+            --conf spark.kubernetes.allocation.batch.delay="15s" \
+            --conf spark.sql.jsonGenerator.ignoreNullField="false" \
+            --conf spark.hadoop.fs.s3a.endpoint="http://myminio-hl.druid-streaming-dev.svc.cluster.local:9000" \
+            --conf spark.hadoop.fs.s3a.access.key="TgcFOLO49eKctC0Yc69W" \
+            --conf spark.hadoop.fs.s3a.secret.key="z5MsduF9HGBw5xtAhgdpzZsSAmg73ollfQFIlb5S" \
+            --conf spark.hadoop.fs.s3a.path.style.access="true" \
+            --conf spark.hadoop.fs.s3a.impl="org.apache.hadoop.fs.s3a.S3AFileSystem" \
+            --conf spark.serializer="org.apache.spark.serializer.KryoSerializer" \
+            --conf spark.kryo.registrationRequired="false" \
+            --conf spark.driver.maxResultSize="600m" \
+            --conf spark.default.parallelism="200" \
+            --conf spark.sql.shuffle.partitions="200" \
+            --conf spark.locality.wait="0" \
+            --conf spark.task.cpus="1" \
+            --conf spark.executor.instances=3 \
+            --conf spark.executor.cores=1 \
+            --conf spark.driver.cores=1 \
+            --conf spark.driver.memory=1000m \
+            --conf spark.kubernetes.driver.request.cores=1 \
+            --conf spark.kubernetes.driver.limit.cores=1 \
+            --conf spark.executor.memory=800m \
+            --conf spark.kubernetes.executor.request.cores=1 \
+            --conf spark.kubernetes.executor.limit.cores=1 \
+            --conf spark.kubernetes.executor.podTemplateFile=/app/spark-enrichment/k8s/spark-pod-template.yaml \
+            --conf spark.local.dir=/tmp/spark-data \
+            local:///app/spark-enrichment.py \
+            --config_file=/app/spark-enrichment/config/config.yaml
+#            --conf spark.kubernetes.driver.podTemplateFile=/app/spark-enrichment/k8s-d/spark-pod-driver-template.yaml \
+#            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.claimName=OnDemand \
+#            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.storageClass=ocs-external-storagecluster-ceph-rbd \
+#            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.options.sizeLimit=10Gi \
+#            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.path=/tmp/spark-data \
+#            --conf spark.kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-1.mount.readOnly=false \
+#            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.spark-local-dir-0.options.claimName=OnDemand \
+#            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.spark-local-dir-0.options.storageClass=ocs-external-storagecluster-ceph-rbd \
+#            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.spark-local-dir-0.options.sizeLimit=8Gi \
+#            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.spark-local-dir-0.mount.path=/tmp/spark-data \
+#            --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.spark-local-dir-0.mount.readOnly=false \
+#            --conf spark.executor.extraJavaOptions="-Dlog4j.configuration=/app/spark-enrichment/config/spark/log4j.properties -Djava.security.auth.login.config=/app/kafka-jaas/jaas.conf" \
+#            --conf spark.driver.extraJavaOptions="-Dlog4j.configuration=/app/spark-enrichment/config/spark/log4j.properties -Djava.security.auth.login.config=/app/kafka-jaas/jaas.conf" \            
+        volumeMounts:
+          - name: spark-config-volume
+            mountPath: /app/spark-enrichment/config/
+          - name: spark-pod-template
+            mountPath: /app/spark-enrichment/k8s
+#        - name: spark-pod-driver-template
+#          mountPath: /app/spark-enrichment/k8s-d            
+#        - name: jaas-conf-volume
+#          mountPath: /app/kafka-jaas
+#        - name: kafka-keystore-volume
+#          mountPath: /app/kafka-keystore
+      restartPolicy: Always
+      volumes:
+      - name: spark-pod-template
+        configMap:
+          name: spark-pod-template
+      - name: spark-pod-driver-template
+        configMap:
+          name: spark-pod-driver-template
+      - name: spark-config-volume
+        secret:
+          secretName: spark-config-secret
+#      - name: kafka-keystore-volume
+#        secret:
+#          secretName: kafka-keystore-prod
+#      - name: "jaas-conf-volume"
+#        configMap:
+#          name: "kafka-jaas"          
+          
+      serviceAccountName: spark
+      #securityContext:
+      #  runAsUser: 1002190000 
+

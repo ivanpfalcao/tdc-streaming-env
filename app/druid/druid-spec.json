@@ -1,0 +1,141 @@
+{
+  "type": "kafka",
+  "spec": {
+    "dataSchema": {
+      "dataSource": "nifi-output-topic",
+      "timestampSpec": {
+        "column": "timestamp",
+        "format": "auto",
+        "missingValue": null
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          {
+            "type": "string",
+            "name": "cep",
+            "multiValueHandling": "SORTED_ARRAY",
+            "createBitmapIndex": true
+          },
+          {
+            "type": "string",
+            "name": "cardFlag",
+            "multiValueHandling": "SORTED_ARRAY",
+            "createBitmapIndex": true
+          },
+          {
+            "type": "double",
+            "name": "value",
+            "multiValueHandling": "SORTED_ARRAY",
+            "createBitmapIndex": false
+          }
+        ],
+        "dimensionExclusions": [
+          "__time",
+          "timestamp"
+        ],
+        "includeAllDimensions": false,
+        "useSchemaDiscovery": false
+      },
+      "metricsSpec": [],
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": {
+          "type": "all"
+        },
+        "queryGranularity": {
+          "type": "none"
+        },
+        "rollup": false,
+        "intervals": []
+      },
+      "transformSpec": {
+        "filter": null,
+        "transforms": []
+      }
+    },
+    "ioConfig": {
+      "topic": "nifi-output-topic",
+      "topicPattern": null,
+      "inputFormat": {
+        "type": "json",
+        "keepNullColumns": false,
+        "assumeNewlineDelimited": false,
+        "useJsonNodeReader": false
+      },
+      "replicas": 1,
+      "taskCount": 1,
+      "taskDuration": "PT1800S",
+      "consumerProperties": {
+        "bootstrap.servers": "kafka-cluster-kafka-bootstrap:9092"
+      },
+      "autoScalerConfig": null,
+      "pollTimeout": 100,
+      "startDelay": "PT5S",
+      "period": "PT30S",
+      "useEarliestOffset": true,
+      "completionTimeout": "PT900S",
+      "lateMessageRejectionPeriod": null,
+      "earlyMessageRejectionPeriod": null,
+      "lateMessageRejectionStartDateTime": null,
+      "configOverrides": null,
+      "idleConfig": null,
+      "stopTaskCount": null,
+      "stream": "nifi-output-topic",
+      "useEarliestSequenceNumber": true,
+      "type": "kafka"
+    },
+    "tuningConfig": {
+      "type": "kafka",
+      "appendableIndexSpec": {
+        "type": "onheap",
+        "preserveExistingMetrics": false
+      },
+      "maxRowsInMemory": 150000,
+      "maxBytesInMemory": 0,
+      "skipBytesInMemoryOverheadCheck": false,
+      "maxRowsPerSegment": 5000000,
+      "maxTotalRows": null,
+      "intermediatePersistPeriod": "PT10M",
+      "maxPendingPersists": 0,
+      "indexSpec": {
+        "bitmap": {
+          "type": "roaring"
+        },
+        "dimensionCompression": "lz4",
+        "stringDictionaryEncoding": {
+          "type": "utf8"
+        },
+        "metricCompression": "lz4",
+        "longEncoding": "longs"
+      },
+      "indexSpecForIntermediatePersists": {
+        "bitmap": {
+          "type": "roaring"
+        },
+        "dimensionCompression": "lz4",
+        "stringDictionaryEncoding": {
+          "type": "utf8"
+        },
+        "metricCompression": "lz4",
+        "longEncoding": "longs"
+      },
+      "reportParseExceptions": false,
+      "handoffConditionTimeout": 900000,
+      "resetOffsetAutomatically": true,
+      "segmentWriteOutMediumFactory": null,
+      "workerThreads": null,
+      "chatRetries": 8,
+      "httpTimeout": "PT10S",
+      "shutdownTimeout": "PT80S",
+      "offsetFetchPeriod": "PT30S",
+      "intermediateHandoffPeriod": "P2147483647D",
+      "logParseExceptions": false,
+      "maxParseExceptions": 2147483647,
+      "maxSavedParseExceptions": 0,
+      "numPersistThreads": 1,
+      "skipSequenceNumberAvailabilityCheck": false,
+      "repartitionTransitionDuration": "PT120S"
+    }
+  },
+  "context": null
+}

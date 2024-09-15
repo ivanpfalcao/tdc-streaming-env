@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+  name: grafana
+spec:
+  #imagePullSecrets:
+  #  - name: quay-secret-nifi
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      #securityContext:
+      #  runAsUser: 1001960000  
+
+      initContainers:
+        - name: init-druid-data
+          image: 'busybox:1.36.1'
+          command:
+            - sh
+            - '-c'
+            - mkdir -p /var/lib/grafana && chmod 777 -R /var/lib/grafana
+          volumeMounts:
+            - name: grafana-pv
+              mountPath: /var/lib/grafana
+          imagePullPolicy: IfNotPresent                
+      containers:
+        - name: grafana
+          #image: ivanpfalcao/druid-grafana:11.0.0
+          image: grafana/grafana:11.0.0-ubuntu
+          #imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent  
+          ports:
+            - containerPort: 3000
+              name: http-grafana
+              protocol: TCP
+          env:
+          - name: GF_SERVER_HTTP_ADDR
+            value: "0.0.0.0"              
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /robots.txt
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 2
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 3000
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 250m
+              memory: 750Mi
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-pv          
+      volumes:
+        - name: grafana-pv
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  ports:
+    - port: 8080
+      targetPort: 3000
+  selector:
+    app: grafana
+  type: LoadBalancer

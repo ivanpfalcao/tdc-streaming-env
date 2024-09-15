@@ -1,0 +1,40 @@
+s3-storage:
+  endpoint: "http://myminio-hl.druid-streaming-dev.svc.cluster.local:9000"
+  accessKey: "TgcFOLO49eKctC0Yc69W"
+  secretKey: "z5MsduF9HGBw5xtAhgdpzZsSAmg73ollfQFIlb5S"
+
+aux-table:
+  format: csv
+  path: "s3a://auxdata/cep/"
+  options:
+    inferSchema: "true"
+    header: "true"
+    sep: ";"
+    
+kafkaInput:
+  options:
+    kafka.bootstrap.servers: "kafka-cluster-kafka-bootstrap:9092"
+    subscribe: "nifi-output-topic"
+    startingOffsets: "earliest"
+
+kafkaOutput:
+  options:
+    kafka.bootstrap.servers: "kafka-cluster-kafka-bootstrap:9092"
+    topic: "output-topic"
+
+schema:
+  fields:
+    - name: "cep"
+      type: "string"
+    - name: "cardFlag"
+      type: "string"
+    - name: "value"
+      type: "double"      
+    - name: "timestamp"
+      type: "string"
+
+join:
+  keys:
+    - "cep"
+
+checkpointLocation: "/tmp/spark-checkpoint"

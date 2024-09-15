@@ -1,0 +1,65 @@
+{
+  "type": "kafka",
+  "spec": {
+    "ioConfig": {
+      "type": "kafka",
+      "consumerProperties": {
+        "bootstrap.servers": "kafka-cluster-kafka-bootstrap:9092"
+      },
+      "topic": "output-topic",
+      "inputFormat": {
+        "type": "kafka",
+        "valueFormat": {
+          "type": "json"
+        }
+      },
+      "taskCount": 2,
+      "useEarliestOffset": true
+    },
+    "tuningConfig": {
+      "type": "kafka"
+    },
+    "dataSchema": {
+      "dataSource": "output-topic",
+      "timestampSpec": {
+        "column": "kafka_timestamp",
+        "format": "iso"
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          "pais",
+          "uf",
+          "cardFlag",
+          "cidade",
+          "distrito",
+          "endereco",
+          "kafka_topic",
+          "cep",
+          {
+            "type": "long",
+            "name": "kafka_offset"
+          },
+          {
+            "type": "long",
+            "name": "kafka.timestamp"
+          },
+          "kafka.topic",
+          {
+            "type": "double",
+            "name": "value"
+          },
+          "timestamp",
+          {
+            "type": "long",
+            "name": "kafka_partition"
+          }
+        ]
+      },
+      "granularitySpec": {
+        "queryGranularity": "none",
+        "rollup": false,
+        "segmentGranularity": "all"
+      }
+    }
+  }
+}

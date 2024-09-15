@@ -1,0 +1,87 @@
+cep;uf;cidade;pais;endereco;distrito
+01001-000;SP;São Paulo;Brasil;Praça da Sé;Sé
+01310-000;SP;São Paulo;Brasil;Avenida Paulista;Bela Vista
+01415-000;SP;São Paulo;Brasil;Rua Bela Cintra;Consolação
+01519-000;SP;São Paulo;Brasil;Rua do Lavapés;Cambuci
+02011-000;SP;São Paulo;Brasil;Rua Voluntários da Pátria;Santana
+02222-000;SP;São Paulo;Brasil;Rua Basílio Alves Morango;Jardim Brasil (Zona Norte)
+03009-000;SP;São Paulo;Brasil;Rua João Teodoro;Brás
+03320-000;SP;São Paulo;Brasil;Rua Emílio Mallet;Vila Gomes Cardim
+04002-000;SP;São Paulo;Brasil;Rua Maria Figueiredo;Paraíso
+04510-000;SP;São Paulo;Brasil;Rua Balthazar da Veiga;Vila Nova Conceição
+05017-000;SP;São Paulo;Brasil;Rua Apinajés;Perdizes
+05508-000;SP;São Paulo;Brasil;Avenida Professor Lineu Prestes;Butantã
+06013-000;SP;Osasco;Brasil;Rua Antônio Agu;Centro
+07074-000;SP;Guarulhos;Brasil;Avenida Pedro de Souza Lopes;Vila Galvão
+08050-000;SP;São Paulo;Brasil;Avenida Imperador;Jardim São Sebastião
+08121-000;SP;São Paulo;Brasil;Rua Manuel Bueno da Fonseca;Jardim São Luís (Zona Leste)
+09015-000;SP;Santo André;Brasil;Avenida Quinze de Novembro;Centro
+09210-000;SP;Santo André;Brasil;Rua Suíça;Parque das Nações
+09510-000;SP;São Caetano do Sul;Brasil;Praça Anacleto Campanella;Centro
+09710-000;SP;São Bernardo do Campo;Brasil;Rua Marechal Deodoro;Centro
+11015-000;SP;Santos;Brasil;Avenida Conselheiro Nébias;Paquetá
+11410-000;SP;Guarujá;Brasil;Avenida Puglisi;Pitangueiras
+13010-000;SP;Campinas;Brasil;Avenida Doutor Moraes Salles;Centro
+14020-000;SP;Ribeirão Preto;Brasil;Avenida Doutor Francisco Junqueira;Vila Seixas
+15015-000;SP;São José do Rio Preto;Brasil;Avenida Doutor Alberto Andaló;Centro
+16015-000;SP;Araçatuba;Brasil;Rua Floriano Peixoto;Vila Mendonça
+17012-000;SP;Bauru;Brasil;Avenida Duque de Caxias;Vila Santa Tereza
+18010-000;SP;Sorocaba;Brasil;Rua da Penha;Centro
+19010-000;SP;Presidente Prudente;Brasil;Rua Barão do Rio Branco;Centro
+20040-000;RJ;Rio de Janeiro;Brasil;Rua da Ajuda;Centro
+21010-000;RJ;Rio de Janeiro;Brasil;Rua Tenerife;Parada de Lucas
+23010-000;RJ;Rio de Janeiro;Brasil;Rua Paulo Martins;Santíssimo
+28010-000;RJ;Campos dos Goytacazes;Brasil;Praça Santíssimo Salvador;Centro
+32010-000;MG;Contagem;Brasil;Avenida João César de Oliveira;Eldorado
+35010-000;MG;Governador Valadares;Brasil;Rua Afonso Pena;Centro
+36010-000;MG;Juiz de Fora;Brasil;Rua Halfeld;Centro
+37010-000;MG;Varginha;Brasil;Avenida Benjamin Constant;Centro
+38010-000;MG;Uberaba;Brasil;Avenida Leopoldino de Oliveira;Centro
+40010-000;BA;Salvador;Brasil;Avenida da França;Comércio
+44010-000;BA;Feira de Santana;Brasil;Rua Barão do Rio Branco;Centro
+45010-000;BA;Vitória da Conquista;Brasil;Praça Hercílio Lima;Centro
+48010-000;BA;Alagoinhas;Brasil;Avenida 24 de Maio;Centro
+50010-000;PE;Recife;Brasil;Avenida Guararapes;Santo Antônio
+52010-000;PE;Recife;Brasil;Rua do Paissandú;Paissandu
+55010-000;PE;Caruaru;Brasil;Rua José Vieira de Assis;João Mota
+57010-000;AL;Maceió;Brasil;Avenida Siqueira Campos;Prado
+58010-000;PB;João Pessoa;Brasil;Avenida Beaurepaire Rohan;Varadouro
+59010-000;RN;Natal;Brasil;Avenida Presidente Café Filho;Praia do Meio
+60010-000;CE;Fortaleza;Brasil;Avenida Presidente Castelo Branco;Moura Brasil
+63010-000;CE;Juazeiro do Norte;Brasil;Rua São Paulo;Centro
+64010-000;PI;Teresina;Brasil;Conjunto Ribeiro Magalhães;Mocambinho
+65010-000;MA;São Luís;Brasil;Rua Vinte e Oito de Setembro;Centro
+66010-000;PA;Belém;Brasil;Avenida Presidente Vargas;Campina
+67010-000;PA;Ananindeua;Brasil;Rodovia BR-316;Guanabara
+68010-000;PA;Santarém;Brasil;Avenida Curuá-Una;Santíssimo
+69010-000;AM;Manaus;Brasil;Avenida Eduardo Ribeiro;Centro
+72010-000;DF;Brasília;Brasil;Praça do Relógio;Taguatinga Centro (Taguatinga)
+73010-000;DF;Brasília;Brasil;Setor Comercial Central;Sobradinho
+78010-000;MT;Cuiabá;Brasil;Avenida General Vale;Bandeirantes
+79010-000;MS;Campo Grande;Brasil;Avenida Coronel Antonino;Coronel Antonino
+80010-000;PR;Curitiba;Brasil;Rua José Loureiro;Centro
+81010-000;PR;Curitiba;Brasil;Avenida Presidente Wenceslau Braz;Lindóia
+82010-000;PR;Curitiba;Brasil;Avenida Cândido Hartmann;Santo Inácio
+83010-000;PR;São José dos Pinhais;Brasil;Rua Guaraqueçaba;Cruzeiro
+84010-000;PR;Ponta Grossa;Brasil;Avenida Doutor Vicente Machado;Centro
+85010-000;PR;Guarapuava;Brasil;Rua Quinze de Novembro;Centro
+86010-000;PR;Londrina;Brasil;Rua Professor João Cândido;Centro
+87010-000;PR;Maringá;Brasil;Avenida Cerro Azul;Zona 02
+88010-000;SC;Florianópolis;Brasil;Rua Felipe Schmidt;Centro
+89010-000;SC;Blumenau;Brasil;Rua 15 de Novembro;Centro
+90010-000;RS;Porto Alegre;Brasil;Rua Siqueira Campos;Centro Histórico
+91010-000;RS;Porto Alegre;Brasil;Avenida Assis Brasil;Santa Maria Goretti
+92010-000;RS;Canoas;Brasil;Avenida Victor Barreto;Centro
+94010-000;RS;Gravataí;Brasil;Avenida José Loureiro da Silva;Centro
+95010-000;RS;Caxias do Sul;Brasil;Avenida Júlio de Castilhos;Nossa Senhora de Lourdes
+96010-000;RS;Pelotas;Brasil;Rua Félix Xavier da Cunha;Centro
+97010-000;RS;Santa Maria;Brasil;Rua Venâncio Aires;Centro
+99010-000;RS;Passo Fundo;Brasil;Avenida Brasil;Centro
+11010-000;SP;Santos;Brasil;Praça Visconde de Mauá;Centro
+12010-000;SP;Taubaté;Brasil;Rua Anízio Ortiz Monteiro;Centro
+14010-000;SP;Ribeirão Preto;Brasil;Rua General Osório;Centro
+16010-000;SP;Araçatuba;Brasil;Praça Rui Barbosa;Centro
+17010-000;SP;Bauru;Brasil;Rua Batista de Carvalho;Centro
+20010-000;RJ;Rio de Janeiro;Brasil;Rua Primeiro de Março;Centro
+22010-000;RJ;Rio de Janeiro;Brasil;Avenida Atlântica;Copacabana
+25010-000;RJ;Duque de Caxias;Brasil;Rua Açu;Engenho do Porto
